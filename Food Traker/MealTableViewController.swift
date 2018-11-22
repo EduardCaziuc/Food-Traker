@@ -13,7 +13,6 @@ class MealTableViewController: UITableViewController {
 
     //MARK: Properties
     
-    
     var meals = [Meal]()
     
     override func viewDidLoad() {
@@ -21,9 +20,12 @@ class MealTableViewController: UITableViewController {
 
         // Use the edit button item provided by the table view controller.
         navigationItem.leftBarButtonItem = editButtonItem
-        
-        //Load the sample data.
-        loadSampleMeals()
+        if let savedMeals = loadMeals() {
+            meals += savedMeals
+        } else {
+            //Load the sample data.
+            loadSampleMeals()
+        }
     }
 
 
@@ -74,6 +76,8 @@ class MealTableViewController: UITableViewController {
         if editingStyle == .delete {
             // Delete the row from the data source
             meals.remove(at: indexPath.row)
+            // Save the meals.
+            saveMeals()
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
@@ -143,7 +147,11 @@ class MealTableViewController: UITableViewController {
                 
                 meals.append(meal)
                 tableView.insertRows(at: [newIndexPath], with: .automatic)
+                
+                
             }
+            // Save the meals.
+            saveMeals()
         }
     }
     
@@ -156,11 +164,27 @@ class MealTableViewController: UITableViewController {
         guard let meal2 = Meal(name: "Chicken and Potatoes", photo: #imageLiteral(resourceName: "meal2"), rating: 5) else {
             fatalError("Unable to instantiate meal2")
         }
-        guard let meal3 = Meal(name: "Pasta with Meatballs", photo: #imageLiteral(resourceName: "meal3"), rating: 3) else {
-            fatalError("Unable to instantiate meal3")
+        guard let meal3 = Meal(name: "Chicken and Potatoes", photo: #imageLiteral(resourceName: "meal2"), rating: 5) else {
+            fatalError("Unable to instantiate meal2")
         }
         
         meals += [meal1, meal2, meal3]
+    }
+    
+    private func saveMeals() {
+        
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(meals, toFile: Meal.ArchiveURL.path)
+        
+        if isSuccessfulSave {
+            os_log("Meals successfully saved.", log: OSLog.default, type: .debug)
+            
+        } else {
+            os_log("Failed to save meals...", log: OSLog.default, type: .error)
+        }
+    }
+    
+    private func loadMeals() -> [Meal]? {
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Meal.ArchiveURL.path) as? [Meal]
     }
 }
 
